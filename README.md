@@ -1,16 +1,16 @@
 # YouTube Hide Members Videos
 
-A lightweight userscript that **automatically hides "Members only"** and **"Members first"** videos from all sections of YouTube — including the homepage, subscriptions feed, and channel video pages.
+A lightweight userscript that **automatically hides "Members only"** and **"Members first"** videos from all sections of YouTube — including the homepage, search results, subscriptions feed, channel video pages and related/suggested videos in the sidebar.
 
 ---
 
 ## Features
 
-- Hides **"Members only"** and **"Members first"** videos  
-- Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior  
-- Reacts to scrolling and content updates automatically  
-- Efficient DOM scanning using specific `.badge-style-type-members-only` selectors  
-- 100% client‑side — no API calls, no external dependencies  
+- Hides **"Members only"** and **"Members first"** videos
+- Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
+- Reacts to scrolling and content updates automatically
+- Efficient DOM scanning using specific `.badge-style-type-members-only` selectors
+- 100% client‑side — no API calls, no external dependencies
 
 ---
 
@@ -49,5 +49,4 @@ If you are using **AdGuard for Windows, macOS, or the browser extension**, you c
 
 ## Contributing
 
-Pull requests are welcome.  
-If YouTube changes its layout (again), please open an issue including an HTML snippet showing the updated badge element so the selectors can be updated quickly.
+Pull requests are welcome. If YouTube changes its layout (again), please open an issue including an HTML snippet showing the updated badge element so the selectors can be updated quickly.
