@@ -43,7 +43,7 @@ If you are using **AdGuard for Windows, macOS, or the browser extension**, you c
 1. Open AdGuard settings.
 2. Navigate to **Extensions → Userscripts** (or **Filters → Custom** if using the extension).
 3. Click **Add userscript**.
-4. Enter the direct URL to the script: https://github.com/umbertoragone/youtube-hide-members-videos/raw/main/youtube-hide-members-videos.user.js
+4. Enter the direct URL to the script: https://github.com/umbertoragone/youtube-hide-members-videos/raw/main/hide-members-videos.user.js
 5. AdGuard will download and manage the script automatically.
 7. Refresh YouTube to activate it.
 
