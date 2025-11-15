@@ -33,7 +33,7 @@ It keeps watching for new items as YouTube loads more videos dynamically via inf
 
 1. Install **[Tampermonkey](https://tampermonkey.net/)** for your browser.
 2. Click **Create a new script**.
-3. Paste the contents of [`youtube-hide-members-videos.user.js`](./youtube-hide-members-videos.user.js).
+3. Paste the contents of [`hide-members-videos.user.js`](./hide-members-videos.user.js).
 4. Save the script and refresh **YouTube**.
 
 ### Option 2. Using AdGuard
@@ -43,7 +43,7 @@ If you are using **AdGuard for Windows, macOS, or the browser extension**, you c
 1. Open AdGuard settings.
 2. Navigate to **Extensions → Userscripts** (or **Filters → Custom** if using the extension).
 3. Click **Add userscript**.
-4. Enter the direct URL to the script: https://github.com/umbertoragone/youtube-hide-members-videos/raw/main/hide-members-videos.user.js
+4. Enter the direct URL to the script: [`https://github.com/umbertoragone/youtube-hide-members-videos/raw/main/hide-members-videos.user.js`](https://github.com/umbertoragone/youtube-hide-members-videos/raw/main/hide-members-videos.user.js)
 5. AdGuard will download and manage the script automatically.
 7. Refresh YouTube to activate it.
 
