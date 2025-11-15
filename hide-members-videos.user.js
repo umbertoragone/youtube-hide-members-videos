@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.0
+// @version      1.0.0
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections
 // @author       umbertoragone
 // @match        https://www.youtube.com/*
