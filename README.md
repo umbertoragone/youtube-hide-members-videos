@@ -31,7 +31,7 @@ It keeps watching for new items as YouTube loads more videos dynamically via inf
 
 ### Option 1. Using Tampermonkey (Recommended)
 
-1. Install **[Tampermonkey](https://tampermonkey.net/)** for your browser.
+1. Install **[Tampermonkey](https://www.tampermonkey.net/)** for your browser.
 2. Click **Create a new script**.
 3. Paste the contents of [`hide-members-videos.user.js`](./hide-members-videos.user.js).
 4. Save the script and refresh **YouTube**.
