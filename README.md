@@ -7,6 +7,7 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 ## Features
 
 - Hides **"Members only"** and **"Members first"** videos
+- Multilingual support — works in 10+ languages
 - Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
 - Reacts to scrolling and content updates automatically
 - Efficient DOM scanning using specific `.badge-style-type-members-only` selectors
@@ -49,4 +50,4 @@ If you are using **AdGuard for Windows, macOS, or the browser extension**, you c
 
 ## Contributing
 
-Pull requests are welcome. If YouTube changes its layout (again), please open an issue including an HTML snippet showing the updated badge element so the selectors can be updated quickly.
+Pull requests are welcome. If YouTube changes its layout (again) or you can help add support for another language, please open an issue including an HTML snippet showing the updated badge element so the selectors can be updated quickly.
