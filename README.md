@@ -2,7 +2,6 @@
 
 [![GitHub release](https://img.shields.io/github/v/release/umbertoragone/youtube-hide-members-videos)](https://github.com/umbertoragone/youtube-hide-members-videos/releases)
 
-
 A lightweight userscript that **automatically hides "Members only"** and **"Members first"** videos from all sections of YouTube — including the homepage, search results, subscriptions feed, channel video pages and related/suggested videos in the sidebar.
 
 ---
