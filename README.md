@@ -7,6 +7,7 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 ## Features
 
 - Hides **"Members only"** and **"Members first"** videos
+- Hides the **"Discover members-only content"** YouTube featured section on the homepage
 - Multilingual support — works in 10+ languages
 - Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
 - Reacts to scrolling and content updates automatically
@@ -22,6 +23,7 @@ The script monitors YouTube's DOM for badges like:
 ```
 
 When one is found, it hides the parent video container (e.g. `<ytd-rich-item-renderer>`).
+For YouTube's homepage **"Discover members-only content"** featured section, it hides the whole section container.
 It keeps watching for new items as YouTube loads more videos dynamically via infinite scroll.
 
 ## Installation

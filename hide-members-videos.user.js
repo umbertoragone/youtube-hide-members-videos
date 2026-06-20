@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.0
+// @version      1.2.1
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -21,10 +21,13 @@
   "use strict";
 
   const BADGE_SELECTORS =
-    ".badge-style-type-members-only, .badge-style-type-members-first, .yt-badge-shape--membership, .yt-badge-shape--commerce";
+    ".badge-style-type-members-only, .badge-style-type-members-first, .yt-badge-shape--membership, .yt-badge-shape--commerce, .ytBadgeShapeMembership, badge-shape.ytBadgeShapeMembership";
 
   const CONTAINER_SELECTOR =
     "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, yt-lockup-view-model";
+
+  const MEMBER_PROMO_SELECTOR = "ytd-brand-video-singleton-renderer";
+  const SECTION_CONTAINER_SELECTOR = "ytd-rich-section-renderer";
 
   const MEMBERS_CHIP_SELECTOR = "ytChipBarViewModelChipWrapper";
 
@@ -43,6 +46,12 @@
     "члены канала", // Russian
     "チャンネル メンバー", // Japanese
     "会员专享", // Chinese
+    "membros exclusivos", // Portuguese
+    "nur für kanalmitglieder", // German
+    "abonnés uniquement", // French
+    "solo abbonati", // Italian
+    "miembros del canal", // Spanish
+    "members-only",
   ];
 
   function isMemberText(text) {
@@ -57,11 +66,20 @@
     }
   }
 
+  function getHideContainer(element) {
+    const promo = element.closest(MEMBER_PROMO_SELECTOR);
+    if (promo) {
+      return promo.closest(SECTION_CONTAINER_SELECTOR) || promo;
+    }
+
+    return element.closest(CONTAINER_SELECTOR);
+  }
+
   function hideMembersVideos() {
     // Find the regular badge elements first
     const badges = document.querySelectorAll(BADGE_SELECTORS);
     for (const badge of badges) {
-      const container = badge.closest(CONTAINER_SELECTOR);
+      const container = getHideContainer(badge);
       hideElement(container);
     }
 
@@ -70,18 +88,22 @@
     for (const badge of textBadges) {
       const text = badge.textContent;
       if (isMemberText(text)) {
-        const container = badge.closest(CONTAINER_SELECTOR);
+        const container = getHideContainer(badge);
         hideElement(container);
       }
     }
 
-    // Find yt-badge-shape elements with member text (newer structure)
-    const badgeShapes = document.querySelectorAll(
-      "yt-badge-shape .yt-badge-shape__text"
-    );
-    for (const badgeText of badgeShapes) {
-      if (isMemberText(badgeText.textContent)) {
-        const container = badgeText.closest(CONTAINER_SELECTOR);
+    // Find badge shapes with member text (newer structures)
+    const badgeShapes = document.querySelectorAll("badge-shape, yt-badge-shape");
+    for (const badgeShape of badgeShapes) {
+      const text = `${badgeShape.textContent || ""} ${
+        badgeShape.getAttribute("aria-label") || ""
+      }`;
+      if (
+        badgeShape.classList.contains("ytBadgeShapeMembership") ||
+        isMemberText(text)
+      ) {
+        const container = getHideContainer(badgeShape);
         hideElement(container);
       }
     }
