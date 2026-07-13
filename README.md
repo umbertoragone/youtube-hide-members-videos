@@ -8,6 +8,7 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 
 - Hides **"Members only"** and **"Members first"** videos
 - Hides the **"Discover members-only content"** YouTube featured section on the homepage
+- Hides the **"Members-only videos"** shelf from channel featured pages
 - Multilingual support — works in 10+ languages
 - Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
 - Reacts to scrolling and content updates automatically

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.1
+// @version      1.2.2
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -23,11 +23,14 @@
   const BADGE_SELECTORS =
     ".badge-style-type-members-only, .badge-style-type-members-first, .yt-badge-shape--membership, .yt-badge-shape--commerce, .ytBadgeShapeMembership, badge-shape.ytBadgeShapeMembership";
 
-  const CONTAINER_SELECTOR =
-    "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, yt-lockup-view-model";
+  const RICH_ITEM_SELECTOR = "ytd-rich-item-renderer";
+  const VIDEO_CONTAINER_SELECTOR =
+    "ytd-grid-video-renderer, ytd-video-renderer, yt-lockup-view-model";
 
   const MEMBER_PROMO_SELECTOR = "ytd-brand-video-singleton-renderer";
   const SECTION_CONTAINER_SELECTOR = "ytd-rich-section-renderer";
+  const SHELF_SELECTOR = "ytd-shelf-renderer";
+  const SHELF_TEXT_SELECTOR = "#title, #subtitle, a[title]";
 
   const MEMBERS_CHIP_SELECTOR = "ytChipBarViewModelChipWrapper";
 
@@ -57,12 +60,15 @@
   function isMemberText(text) {
     if (!text) return false;
     const lower = text.toLowerCase().trim();
-    return MEMBER_TEXTS.some((memberText) => lower.includes(memberText));
+    return (
+      MEMBER_TEXTS.some((memberText) => lower.includes(memberText)) ||
+      lower.includes("videos available to members")
+    );
   }
 
-  function hideElement(element) {
-    if (element && element.style.display !== "none") {
-      element.style.display = "none";
+  function removeElement(element) {
+    if (element && element.isConnected) {
+      element.remove();
     }
   }
 
@@ -72,15 +78,36 @@
       return promo.closest(SECTION_CONTAINER_SELECTOR) || promo;
     }
 
-    return element.closest(CONTAINER_SELECTOR);
+    return (
+      element.closest(RICH_ITEM_SELECTOR) ||
+      element.closest(VIDEO_CONTAINER_SELECTOR)
+    );
+  }
+
+  function removeMemberShelves() {
+    const shelves = document.querySelectorAll(SHELF_SELECTOR);
+    for (const shelf of shelves) {
+      const text = Array.from(shelf.querySelectorAll(SHELF_TEXT_SELECTOR))
+        .map(
+          (element) =>
+            `${element.textContent || ""} ${element.getAttribute("title") || ""}`
+        )
+        .join(" ");
+
+      if (isMemberText(text)) {
+        removeElement(shelf);
+      }
+    }
   }
 
   function hideMembersVideos() {
+    removeMemberShelves();
+
     // Find the regular badge elements first
     const badges = document.querySelectorAll(BADGE_SELECTORS);
     for (const badge of badges) {
       const container = getHideContainer(badge);
-      hideElement(container);
+      removeElement(container);
     }
 
     // Find yt-badge-view-model elements with member text
@@ -89,7 +116,7 @@
       const text = badge.textContent;
       if (isMemberText(text)) {
         const container = getHideContainer(badge);
-        hideElement(container);
+        removeElement(container);
       }
     }
 
@@ -104,7 +131,7 @@
         isMemberText(text)
       ) {
         const container = getHideContainer(badgeShape);
-        hideElement(container);
+        removeElement(container);
       }
     }
 
@@ -116,7 +143,7 @@
         const ariaLabel = chipButton.getAttribute("aria-label");
         const chipText = chipButton.textContent;
         if (isMemberText(ariaLabel) || isMemberText(chipText)) {
-          hideElement(wrapper);
+          removeElement(wrapper);
         }
       }
     }
