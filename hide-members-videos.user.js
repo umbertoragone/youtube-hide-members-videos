@@ -47,7 +47,7 @@
     "nur für mitglieder", // German
     "membros", // Portuguese
     "члены канала", // Russian
-    "チャンネル メンバー", // Japanese
+    "メンバー限定", // Japanese
     "会员专享", // Chinese
     "membros exclusivos", // Portuguese
     "nur für kanalmitglieder", // German
