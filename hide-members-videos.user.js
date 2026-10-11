@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.4
+// @version      1.2.5
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -31,6 +31,15 @@
   const SECTION_CONTAINER_SELECTOR = "ytd-rich-section-renderer";
   const SHELF_SELECTOR = "ytd-shelf-renderer";
   const SHELF_TEXT_SELECTOR = "#title, #subtitle, a[title]";
+
+  const CHANNEL_ATTRIBUTION_SELECTOR =
+    "yt-attribution-view-model.ytPageHeaderViewModelAttribution";
+  const CHANNEL_ACTIONS_SELECTOR =
+    "yt-flexible-actions-view-model.ytPageHeaderViewModelFlexibleActions";
+  const MEMBER_RECOGNITION_SELECTOR = "ytd-recognition-shelf-renderer";
+  const CHANNEL_SECTION_SELECTOR =
+    'ytd-item-section-renderer[page-subtype="channels"]';
+  const memberSections = new WeakSet();
 
   const MEMBERS_CHIP_SELECTOR = "ytChipBarViewModelChipWrapper";
 
@@ -95,12 +104,96 @@
         .join(" ");
 
       if (isMemberText(text)) {
-        removeElement(shelf);
+        removeMemberShelf(shelf);
+      }
+    }
+  }
+
+  function removeMemberShelf(shelf) {
+    const section = shelf.closest(CHANNEL_SECTION_SELECTOR);
+    const contents = section?.querySelector(":scope > #contents");
+    if (contents?.contains(shelf)) {
+      memberSections.add(section);
+    }
+    removeElement(shelf);
+  }
+
+  function hasMemberSectionData(section) {
+    // YouTube retains renderer data after a shelf has been removed from the DOM.
+    // This also identifies wrappers left by an earlier script execution.
+    const items = section.data?.contents;
+    if (!Array.isArray(items)) return false;
+    return items.some((item) => {
+      if (item.recognitionShelfRenderer) return true;
+      const shelf = item.shelfRenderer;
+      if (!shelf) return false;
+      const text = [shelf.title, shelf.subtitle]
+        .map((value) =>
+          value?.simpleText ||
+          (Array.isArray(value?.runs)
+            ? value.runs.map((run) => run.text || "").join("")
+            : "")
+        )
+        .join(" ");
+      return isMemberText(text);
+    });
+  }
+
+  function removeChannelMembershipPromos() {
+    const attributions = document.querySelectorAll(CHANNEL_ATTRIBUTION_SELECTOR);
+    for (const attribution of attributions) {
+      if (attribution.querySelector("badge-shape.ytBadgeShapeCommerce")) {
+        removeElement(attribution);
+      }
+    }
+
+    // General button classes are shared with Subscribe and Community.
+    const actionRows = document.querySelectorAll(CHANNEL_ACTIONS_SELECTOR);
+    for (const actionRow of actionRows) {
+      const joinButtons = actionRow.querySelectorAll(
+        '.ytFlexibleActionsViewModelAction button[aria-label="Join this channel"]'
+      );
+      for (const button of joinButtons) {
+        removeElement(button.closest(".ytFlexibleActionsViewModelAction"));
+      }
+    }
+
+    const recognitionShelves = document.querySelectorAll(
+      MEMBER_RECOGNITION_SELECTOR
+    );
+    for (const shelf of recognitionShelves) {
+      removeMemberShelf(shelf);
+    }
+  }
+
+  function removeEmptyMemberSections() {
+    const sections = document.querySelectorAll(CHANNEL_SECTION_SELECTOR);
+    for (const section of sections) {
+      // Remember the shelf's owner across asynchronous YouTube updates.
+      // Other empty sections may still be loading and must stay untouched.
+      const contents = section.querySelector(":scope > #contents");
+      if (!contents || contents.textContent.trim()) continue;
+
+      const hasContent = Array.from(contents.children).some((child) => {
+        if (child.matches("template")) return false;
+        if (child.matches("dom-repeat, ps-dom-repeat")) {
+          return Array.from(child.children).some(
+            (element) => !element.matches("template")
+          );
+        }
+        return true;
+      });
+      if (
+        !hasContent &&
+        (memberSections.has(section) || hasMemberSectionData(section))
+      ) {
+        removeElement(section);
       }
     }
   }
 
   function hideMembersVideos() {
+    removeChannelMembershipPromos();
     removeMemberShelves();
 
     // Hide member-only promotional lockups identified by both labels.
@@ -156,6 +249,8 @@
         }
       }
     }
+
+    removeEmptyMemberSections();
   }
 
   const observer = new MutationObserver(hideMembersVideos);

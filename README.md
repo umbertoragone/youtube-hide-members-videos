@@ -6,9 +6,10 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 
 ## Features
 
-- Hides **"Members only"** and **"Members first"** videos
+- Hides **"Members only"** and **"Members first"** videos, plus promotional cards labeled **"YouTube featured"** and **"Try for"**
 - Hides the **"Discover members-only content"** YouTube featured section on the homepage
-- Hides the **"Members-only videos"** shelf from channel featured pages
+- Hides **"Members-only videos"** and **"Our members"** sections on channel pages
+- Hides channel membership pricing and, in the English UI, the **Join** button
 - Multilingual support — works in 10+ languages
 - Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
 - Reacts to scrolling and content updates automatically
@@ -59,4 +60,4 @@ Or install manually:
 
 ## Contributing
 
-Pull requests are welcome. If YouTube changes its layout (again) or you can help add support for another language, please open an issue including an HTML snippet showing the updated badge element so the selectors can be updated quickly.
+Pull requests are welcome. If YouTube changes its layout (again) or you can help add support for another language, please open an issue including an HTML snippet showing the updated badge element or the new section so the selectors can be updated quickly.
