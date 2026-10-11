@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.3
+// @version      1.2.4
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -21,7 +21,7 @@
   "use strict";
 
   const BADGE_SELECTORS =
-    ".badge-style-type-members-only, .badge-style-type-members-first, .yt-badge-shape--membership, .ytBadgeShapeMembership, badge-shape.ytBadgeShapeMembership";
+    ".badge-style-type-members-only, .badge-style-type-members-first, .yt-badge-shape--membership, .yt-badge-shape--commerce, .ytBadgeShapeMembership, badge-shape.ytBadgeShapeMembership";
 
   const RICH_ITEM_SELECTOR = "ytd-rich-item-renderer";
   const VIDEO_CONTAINER_SELECTOR =
