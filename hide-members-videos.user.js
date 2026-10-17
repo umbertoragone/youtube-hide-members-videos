@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.5
+// @version      1.2.6
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -28,6 +28,10 @@
     "ytd-grid-video-renderer, ytd-video-renderer, yt-lockup-view-model";
 
   const MEMBER_PROMO_SELECTOR = "ytd-brand-video-singleton-renderer";
+  const HOME_PROMO_SECTION_SELECTOR =
+    "ytd-rich-grid-renderer > #contents > ytd-rich-section-renderer";
+  const HOME_PROMO_SHELF_SELECTOR =
+    ":scope > #content > ytd-brand-video-shelf-renderer";
   const SECTION_CONTAINER_SELECTOR = "ytd-rich-section-renderer";
   const SHELF_SELECTOR = "ytd-shelf-renderer";
   const SHELF_TEXT_SELECTOR = "#title, #subtitle, a[title]";
@@ -105,6 +109,38 @@
 
       if (isMemberText(text)) {
         removeMemberShelf(shelf);
+      }
+    }
+  }
+
+  function removeHomeMembershipPromos() {
+    const sections = document.querySelectorAll(HOME_PROMO_SECTION_SELECTOR);
+    for (const section of sections) {
+      const shelf = section.querySelector(HOME_PROMO_SHELF_SELECTOR);
+      if (!shelf) continue;
+
+      // Brand shelves also promote other content. The memberships destination
+      // identifies this promotion without relying on translated text or labels.
+      const hasMembershipLink = Array.from(shelf.querySelectorAll("a[href]"))
+        .some((link) => {
+          try {
+            const url = new URL(link.getAttribute("href"), window.location.href);
+            return (
+              url.origin === window.location.origin &&
+              url.pathname === "/channel_memberships"
+            );
+          } catch {
+            return false;
+          }
+        });
+      // Some live variants omit the memberships CTA entirely. Only treat a
+      // badge-based shelf as a membership promotion when every video is marked.
+      const videos = Array.from(shelf.querySelectorAll("ytd-rich-grid-media"));
+      const hasOnlyMemberVideos = videos.length > 0 && videos.every((video) =>
+        video.querySelector(".ytBadgeShapeMembership")
+      );
+      if (hasMembershipLink || hasOnlyMemberVideos) {
+        removeElement(section);
       }
     }
   }
@@ -193,6 +229,7 @@
   }
 
   function hideMembersVideos() {
+    removeHomeMembershipPromos();
     removeChannelMembershipPromos();
     removeMemberShelves();
 

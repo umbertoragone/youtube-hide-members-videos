@@ -8,6 +8,7 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 
 - Hides **"Members only"** and **"Members first"** videos, plus promotional cards labeled **"YouTube featured"** and **"Try for"**
 - Hides the **"Discover members-only content"** YouTube featured section on the homepage
+- Removes the entire **"Get more from memberships"** homepage banner using its renderer structure and membership links or badge classes, independently of the interface language
 - Hides **"Members-only videos"** and **"Our members"** sections on channel pages
 - Hides channel membership pricing and, in the English UI, the **Join** button
 - Multilingual support — works in 10+ languages
@@ -26,6 +27,7 @@ The script monitors YouTube's DOM for badges like:
 
 When one is found, it hides the parent video container (e.g. `<ytd-rich-item-renderer>`).
 For YouTube's homepage **"Discover members-only content"** featured section, it hides the whole section container.
+For the **"Get more from memberships"** banner, it removes the whole homepage grid section when its `ytd-brand-video-shelf-renderer` links to `/channel_memberships`, or contains videos that all have a `.ytBadgeShapeMembership` badge. This also handles variants without the membership button. Unrelated brand shelves are preserved; translated headings and aria-labels are not used for this check.
 It keeps watching for new items as YouTube loads more videos dynamically via infinite scroll.
 
 ## Installation
