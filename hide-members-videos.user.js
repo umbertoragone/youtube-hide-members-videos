@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.6
+// @version      1.2.7
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -38,6 +38,8 @@
 
   const CHANNEL_ATTRIBUTION_SELECTOR =
     "yt-attribution-view-model.ytPageHeaderViewModelAttribution";
+  const WATCH_PAGE_JOIN_BUTTON_SELECTOR =
+    "ytd-watch-metadata #owner #sponsor-button";
   const CHANNEL_ACTIONS_SELECTOR =
     "yt-flexible-actions-view-model.ytPageHeaderViewModelFlexibleActions";
   const MEMBER_RECOGNITION_SELECTOR = "ytd-recognition-shelf-renderer";
@@ -183,14 +185,35 @@
       }
     }
 
-    // General button classes are shared with Subscribe and Community.
+    // Subscribe has a dedicated host. The membership Join action is the
+    // separate generic button-view-model, independent of its translated text.
     const actionRows = document.querySelectorAll(CHANNEL_ACTIONS_SELECTOR);
     for (const actionRow of actionRows) {
-      const joinButtons = actionRow.querySelectorAll(
-        '.ytFlexibleActionsViewModelAction button[aria-label="Join this channel"]'
+      const actions = actionRow.querySelectorAll(
+        ".ytFlexibleActionsViewModelAction"
       );
-      for (const button of joinButtons) {
-        removeElement(button.closest(".ytFlexibleActionsViewModelAction"));
+      for (const action of actions) {
+        const isGenericButtonAction =
+          action.querySelector(":scope > button-view-model") &&
+          !action.querySelector("yt-subscribe-button-view-model");
+        const membershipLink = Array.from(
+          action.querySelectorAll("a[href]")
+        ).some((link) => {
+          try {
+            const url = new URL(link.getAttribute("href"), window.location.href);
+            return (
+              url.origin === window.location.origin &&
+              (url.pathname === "/channel_memberships" ||
+                url.pathname.endsWith("/join"))
+            );
+          } catch {
+            return false;
+          }
+        });
+
+        if (isGenericButtonAction || membershipLink) {
+          removeElement(action);
+        }
       }
     }
 
@@ -199,6 +222,17 @@
     );
     for (const shelf of recognitionShelves) {
       removeMemberShelf(shelf);
+    }
+  }
+
+  function removeWatchPageJoinButton() {
+    if (window.location.pathname !== "/watch") return;
+
+    const joinButtons = document.querySelectorAll(
+      WATCH_PAGE_JOIN_BUTTON_SELECTOR
+    );
+    for (const button of joinButtons) {
+      removeElement(button);
     }
   }
 
@@ -231,6 +265,7 @@
   function hideMembersVideos() {
     removeHomeMembershipPromos();
     removeChannelMembershipPromos();
+    removeWatchPageJoinButton();
     removeMemberShelves();
 
     // Hide member-only promotional lockups identified by both labels.

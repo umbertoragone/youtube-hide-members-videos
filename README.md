@@ -10,7 +10,7 @@ A lightweight userscript that **automatically hides "Members only"** and **"Memb
 - Hides the **"Discover members-only content"** YouTube featured section on the homepage
 - Removes the entire **"Get more from memberships"** homepage banner using its renderer structure and membership links or badge classes, independently of the interface language
 - Hides **"Members-only videos"** and **"Our members"** sections on channel pages
-- Hides channel membership pricing and, in the English UI, the **Join** button
+- Hides channel membership pricing and **Join** buttons on channel and video pages across localized YouTube interfaces
 - Multilingual support — works in 10+ languages
 - Works dynamically with YouTube's modern **Single Page Application (SPA)** behavior
 - Reacts to scrolling and content updates automatically
