@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.7
+// @version      1.2.8
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -51,34 +51,96 @@
 
   // International member badge texts (lowercase for matching)
   const MEMBER_TEXTS = [
-    "members only",
-    "members first",
-    "anteprima per abbonati", // Italian
-    "solo per abbonati", // Italian alternative
-    "membri", // Italian "members"
-    "abbonati", // Italian "subscribers/members"
-    "solo miembros", // Spanish
-    "membres uniquement", // French
+    "slegs lede", // af — Afrikaans
+    "yalnız üzvlər", // az — Azerbaijani
+    "khusus pelanggan", // id — Indonesian
+    "ahli sahaja", // ms — Malay
+    "samo za članove", // Bosnian, Croatian, Serbian
+    "només per a abonats", // ca — Catalan
+    "pouze členové", // cs — Czech
+    "kun for medlemmer", // da — Danish
+    "nur für kanalmitglieder", // de — German
     "nur für mitglieder", // German
-    "membros", // Portuguese
-    "члены канала", // Russian
-    "メンバー限定", // Japanese
-    "会员专享", // Chinese
-    "membros exclusivos", // Portuguese
-    "nur für kanalmitglieder", // German
-    "abonnés uniquement", // French
-    "solo abbonati", // Italian
+    "ainult liikmetele", // et — Estonian
+    "members only", // English (India, UK, US)
+    "members first", // English
+    "videos available to members", // English
+    "members-only", // English
+    "solo para miembros", // es — Spanish (Spain)
+    "solo miembros", // Spanish (Latin America, US)
     "miembros del canal", // Spanish
-    "members-only",
+    "kideentzat soilik", // eu — Basque
+    "mga miyembro lang", // fil — Filipino
+    "réservé aux membres", // fr — French
+    "réservée aux membres", // fr-CA — French (Canada)
+    "membres uniquement", // French
+    "abonnés uniquement", // French
+    "só membros", // gl — Galician
+    "amalungu kuphela", // zu — Zulu
+    "meðlimir eingöngu", // is — Icelandic
+    "riservato agli abbonati", // it — Italian
+    "anteprima per abbonati", // Italian
+    "solo per abbonati", // Italian
+    "membri", // Italian
+    "abbonati", // Italian
+    "solo abbonati", // Italian
+    "wanachama pekee", // sw — Swahili
+    "tikai dalībniekiem", // lv — Latvian
+    "tik nariams", // lt — Lithuanian
+    "csak tagoknak", // hu — Hungarian
+    "alleen voor leden", // nl — Dutch
+    "bare medlemmer", // no — Norwegian
+    "faqat homiylar", // uz — Uzbek
+    "tylko wspierający", // pl — Polish
+    "apenas apoiantes", // pt-PT — Portuguese (Portugal)
+    "só para membros", // pt — Portuguese (Brazil)
+    "membros", // Portuguese
+    "membros exclusivos", // Portuguese
+    "numai pentru membri", // ro — Romanian
+    "vetëm anëtarët", // sq — Albanian
+    "len pre členov", // sk — Slovak
+    "samo člani", // sl — Slovenian
+    "vain jäsenille", // fi — Finnish
+    "endast medlemmar", // sv — Swedish
+    "chỉ dành cho hội viên", // vi — Vietnamese
+    "üyelere özel", // tr — Turkish
+    "μόνο για συνδρομητές", // el — Greek
+    "միայն անդամների համար", // hy — Armenian
+    "בלעדי למועדון", // iw — Hebrew
+    "صرف اراکین", // ur — Urdu
+    "الأعضاء فقط", // ar — Arabic
+    "مختص اعضا", // fa — Persian
+    "सदस्यहरू मात्र", // ne — Nepali
+    "फक्त सदस्य", // mr — Marathi
+    "सिर्फ़ सदस्यों के लिए", // hi — Hindi
+    "কেৱল সদস্যৰ বাবে", // as — Assamese
+    "শুধুমাত্র মেম্বারদের জন্য", // bn — Bengali
+    "ਸਿਰਫ਼ ਮੈਂਬਰ", // pa — Punjabi
+    "માત્ર સભ્યો", // gu — Gujarati
+    "କେବଳ ସଦସ୍ୟମାନେ", // or — Odia
+    "உறுப்பினர்களுக்கு மட்டும்", // ta — Tamil
+    "మెంబర్‌లు మాత్రమే", // te — Telugu
+    "ಸದಸ್ಯರು ಮಾತ್ರ", // kn — Kannada
+    "അംഗങ്ങൾക്ക് മാത്രം", // ml — Malayalam
+    "සාමාජිකයින් පමණි", // si — Sinhala
+    "เฉพาะสมาชิก", // th — Thai
+    "ສະມາຊິກເທົ່ານັ້ນ", // lo — Lao
+    "အဖွဲ့ဝင်သီးသန့်", // my — Burmese
+    "მხოლოდ წევრებისთვის", // ka — Georgian
+    "አባላት ብቻ", // am — Amharic
+    "សមាជិកតែប៉ុណ្ណោះ", // km — Khmer
+    "会员专享", // zh-CN — Chinese (Simplified)
+    "頻道會員專屬", // zh-TW — Chinese (Traditional)
+    "僅限會員", // zh-HK — Chinese (Hong Kong)
+    "メンバー限定", // ja — Japanese
+    "회원 전용", // ko — Korean
+    "члены канала", // Russian
   ];
 
   function isMemberText(text) {
     if (!text) return false;
     const lower = text.toLowerCase().trim();
-    return (
-      MEMBER_TEXTS.some((memberText) => lower.includes(memberText)) ||
-      lower.includes("videos available to members")
-    );
+    return MEMBER_TEXTS.some((memberText) => lower.includes(memberText));
   }
 
   function removeElement(element) {
