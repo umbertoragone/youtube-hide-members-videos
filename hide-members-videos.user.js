@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.8
+// @version      1.2.9
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -45,7 +45,6 @@
   const MEMBER_RECOGNITION_SELECTOR = "ytd-recognition-shelf-renderer";
   const CHANNEL_SECTION_SELECTOR =
     'ytd-item-section-renderer[page-subtype="channels"]';
-  const memberSections = new WeakSet();
 
   const MEMBERS_CHIP_SELECTOR = "ytChipBarViewModelChipWrapper";
 
@@ -143,10 +142,40 @@
     return MEMBER_TEXTS.some((memberText) => lower.includes(memberText));
   }
 
-  function removeElement(element) {
-    if (element && element.isConnected) {
-      element.remove();
-    }
+  // Keep YouTube's managed children intact during SPA reconciliation.
+  // Recheck changed content because YouTube recycles these nodes.
+  const HIDDEN_ATTRIBUTE = "data-youtube-hide-members";
+  const style = document.createElement("style");
+  style.textContent = `[${HIDDEN_ATTRIBUTE}] { display: none !important; }`;
+  (document.head || document.documentElement).appendChild(style);
+  const hiddenElements = new Set(
+    document.querySelectorAll(`[${HIDDEN_ATTRIBUTE}]`)
+  );
+  let targets = new Set();
+
+  const SCAN_ROOT_SELECTOR = [
+    RICH_ITEM_SELECTOR,
+    VIDEO_CONTAINER_SELECTOR,
+    MEMBER_PROMO_SELECTOR,
+    SECTION_CONTAINER_SELECTOR,
+    SHELF_SELECTOR,
+    MEMBER_RECOGNITION_SELECTOR,
+    "ytd-item-section-renderer",
+    "yt-attribution-view-model",
+    "yt-flexible-actions-view-model",
+    "ytd-watch-metadata",
+    `.${MEMBERS_CHIP_SELECTOR}`,
+    `[${HIDDEN_ATTRIBUTE}]`,
+  ].join(", ");
+
+  function findAll(root, selector) {
+    const matches = Array.from(root.querySelectorAll(selector));
+    if (root.nodeType === 1 && root.matches(selector)) matches.unshift(root);
+    return matches;
+  }
+
+  function hideElement(element) {
+    if (element?.isConnected) targets.add(element);
   }
 
   function getHideContainer(element) {
@@ -161,8 +190,8 @@
     );
   }
 
-  function removeMemberShelves() {
-    const shelves = document.querySelectorAll(SHELF_SELECTOR);
+  function removeMemberShelves(root) {
+    const shelves = findAll(root, SHELF_SELECTOR);
     for (const shelf of shelves) {
       const text = Array.from(shelf.querySelectorAll(SHELF_TEXT_SELECTOR))
         .map(
@@ -172,13 +201,13 @@
         .join(" ");
 
       if (isMemberText(text)) {
-        removeMemberShelf(shelf);
+        hideMemberShelf(shelf);
       }
     }
   }
 
-  function removeHomeMembershipPromos() {
-    const sections = document.querySelectorAll(HOME_PROMO_SECTION_SELECTOR);
+  function removeHomeMembershipPromos(root) {
+    const sections = findAll(root, HOME_PROMO_SECTION_SELECTOR);
     for (const section of sections) {
       const shelf = section.querySelector(HOME_PROMO_SHELF_SELECTOR);
       if (!shelf) continue;
@@ -204,52 +233,51 @@
         video.querySelector(".ytBadgeShapeMembership")
       );
       if (hasMembershipLink || hasOnlyMemberVideos) {
-        removeElement(section);
+        hideElement(section);
       }
     }
   }
 
-  function removeMemberShelf(shelf) {
-    const section = shelf.closest(CHANNEL_SECTION_SELECTOR);
-    const contents = section?.querySelector(":scope > #contents");
-    if (contents?.contains(shelf)) {
-      memberSections.add(section);
+  function hideMemberShelf(shelf) {
+    hideElement(shelf);
+  }
+
+  function renderedChildren(container) {
+    const children = [];
+    for (const child of container.children) {
+      if (child.matches("template")) continue;
+      if (child.matches("dom-repeat, ps-dom-repeat")) {
+        children.push(...renderedChildren(child));
+      } else {
+        children.push(child);
+      }
     }
-    removeElement(shelf);
+    return children;
   }
 
-  function hasMemberSectionData(section) {
-    // YouTube retains renderer data after a shelf has been removed from the DOM.
-    // This also identifies wrappers left by an earlier script execution.
-    const items = section.data?.contents;
-    if (!Array.isArray(items)) return false;
-    return items.some((item) => {
-      if (item.recognitionShelfRenderer) return true;
-      const shelf = item.shelfRenderer;
-      if (!shelf) return false;
-      const text = [shelf.title, shelf.subtitle]
-        .map((value) =>
-          value?.simpleText ||
-          (Array.isArray(value?.runs)
-            ? value.runs.map((run) => run.text || "").join("")
-            : "")
-        )
-        .join(" ");
-      return isMemberText(text);
-    });
+  function hideMemberSections(root) {
+    for (const section of findAll(root, CHANNEL_SECTION_SELECTOR)) {
+      const contents = section.querySelector(":scope > #contents");
+      if (!contents) continue;
+      // Repeats can contain public content as well as membership shelves.
+      const children = renderedChildren(contents);
+      if (children.length && children.every((child) => targets.has(child))) {
+        hideElement(section);
+      }
+    }
   }
 
-  function removeChannelMembershipPromos() {
-    const attributions = document.querySelectorAll(CHANNEL_ATTRIBUTION_SELECTOR);
+  function removeChannelMembershipPromos(root) {
+    const attributions = findAll(root, CHANNEL_ATTRIBUTION_SELECTOR);
     for (const attribution of attributions) {
       if (attribution.querySelector("badge-shape.ytBadgeShapeCommerce")) {
-        removeElement(attribution);
+        hideElement(attribution);
       }
     }
 
     // Subscribe has a dedicated host. The membership Join action is the
     // separate generic button-view-model, independent of its translated text.
-    const actionRows = document.querySelectorAll(CHANNEL_ACTIONS_SELECTOR);
+    const actionRows = findAll(root, CHANNEL_ACTIONS_SELECTOR);
     for (const actionRow of actionRows) {
       const actions = actionRow.querySelectorAll(
         ".ytFlexibleActionsViewModelAction"
@@ -274,90 +302,60 @@
         });
 
         if (isGenericButtonAction || membershipLink) {
-          removeElement(action);
+          hideElement(action);
         }
       }
     }
 
-    const recognitionShelves = document.querySelectorAll(
-      MEMBER_RECOGNITION_SELECTOR
-    );
+    const recognitionShelves = findAll(root, MEMBER_RECOGNITION_SELECTOR);
     for (const shelf of recognitionShelves) {
-      removeMemberShelf(shelf);
+      hideMemberShelf(shelf);
     }
   }
 
-  function removeWatchPageJoinButton() {
+  function removeWatchPageJoinButton(root) {
     if (window.location.pathname !== "/watch") return;
 
-    const joinButtons = document.querySelectorAll(
-      WATCH_PAGE_JOIN_BUTTON_SELECTOR
-    );
+    const joinButtons = findAll(root, WATCH_PAGE_JOIN_BUTTON_SELECTOR);
     for (const button of joinButtons) {
-      removeElement(button);
+      hideElement(button);
     }
   }
 
-  function removeEmptyMemberSections() {
-    const sections = document.querySelectorAll(CHANNEL_SECTION_SELECTOR);
-    for (const section of sections) {
-      // Remember the shelf's owner across asynchronous YouTube updates.
-      // Other empty sections may still be loading and must stay untouched.
-      const contents = section.querySelector(":scope > #contents");
-      if (!contents || contents.textContent.trim()) continue;
-
-      const hasContent = Array.from(contents.children).some((child) => {
-        if (child.matches("template")) return false;
-        if (child.matches("dom-repeat, ps-dom-repeat")) {
-          return Array.from(child.children).some(
-            (element) => !element.matches("template")
-          );
-        }
-        return true;
-      });
-      if (
-        !hasContent &&
-        (memberSections.has(section) || hasMemberSectionData(section))
-      ) {
-        removeElement(section);
-      }
-    }
-  }
-
-  function hideMembersVideos() {
-    removeHomeMembershipPromos();
-    removeChannelMembershipPromos();
-    removeWatchPageJoinButton();
-    removeMemberShelves();
+  function scanContent(root) {
+    removeHomeMembershipPromos(root);
+    removeChannelMembershipPromos(root);
+    removeWatchPageJoinButton(root);
+    removeMemberShelves(root);
 
     // Hide member-only promotional lockups identified by both labels.
-    const lockups = document.querySelectorAll("yt-lockup-view-model");
+    const lockups = findAll(root, "yt-lockup-view-model");
     for (const lockup of lockups) {
       const text = (lockup.textContent || "").toLowerCase();
       if (text.includes("youtube featured") && text.includes("try for")) {
-        removeElement(lockup);
+        hideElement(lockup);
       }
     }
 
     // Find the regular badge elements first
-    const badges = document.querySelectorAll(BADGE_SELECTORS);
+    const badges = findAll(root, BADGE_SELECTORS);
     for (const badge of badges) {
       const container = getHideContainer(badge);
-      removeElement(container);
+      hideElement(container);
     }
 
     // Find yt-badge-view-model elements with member text
-    const textBadges = document.querySelectorAll("yt-badge-view-model");
+    const textBadges = findAll(root, "yt-badge-view-model");
     for (const badge of textBadges) {
       const text = badge.textContent;
       if (isMemberText(text)) {
         const container = getHideContainer(badge);
-        removeElement(container);
+        hideElement(container);
       }
     }
 
     // Find badge shapes with member text (newer structures)
-    const badgeShapes = document.querySelectorAll("badge-shape, yt-badge-shape");
+    const badgeShapes = findAll(root, "badge-shape, yt-badge-shape");
     for (const badgeShape of badgeShapes) {
       const text = `${badgeShape.textContent || ""} ${
         badgeShape.getAttribute("aria-label") || ""
@@ -367,31 +365,135 @@
         isMemberText(text)
       ) {
         const container = getHideContainer(badgeShape);
-        removeElement(container);
+        hideElement(container);
       }
     }
 
     // Hide "Members only" filter chips in the chip bar
-    const chipWrappers = document.querySelectorAll(`.${MEMBERS_CHIP_SELECTOR}`);
+    const chipWrappers = findAll(root, `.${MEMBERS_CHIP_SELECTOR}`);
     for (const wrapper of chipWrappers) {
       const chipButton = wrapper.querySelector('button[role="tab"]');
       if (chipButton) {
         const ariaLabel = chipButton.getAttribute("aria-label");
         const chipText = chipButton.textContent;
         if (isMemberText(ariaLabel) || isMemberText(chipText)) {
-          removeElement(wrapper);
+          hideElement(wrapper);
         }
       }
     }
 
-    removeEmptyMemberSections();
+    hideMemberSections(root);
   }
 
-  const observer = new MutationObserver(hideMembersVideos);
-  observer.observe(document.body, { childList: true, subtree: true });
+  function isInRoots(element, roots) {
+    for (let node = element; node; node = node.parentNode) {
+      if (roots.has(node)) return true;
+    }
+    return false;
+  }
 
-  window.addEventListener("yt-navigate-finish", hideMembersVideos);
-  window.addEventListener("scroll", hideMembersVideos, { passive: true });
+  function hideMembersVideos(roots = new Set([document])) {
+    targets = new Set();
+    for (const root of roots) scanContent(root);
+    for (const element of hiddenElements) {
+      if (!element.isConnected || (isInRoots(element, roots) && !targets.has(element))) {
+        element.removeAttribute(HIDDEN_ATTRIBUTE);
+        hiddenElements.delete(element);
+      }
+    }
+    for (const element of targets) {
+      hiddenElements.add(element);
+      if (!element.hasAttribute(HIDDEN_ATTRIBUTE)) {
+        element.setAttribute(HIDDEN_ATTRIBUTE, "");
+      }
+    }
+  }
+
+  let scheduled = false;
+  let fullScan = false;
+  const pendingRoots = new Set();
+
+  function requestScan() {
+    if (scheduled) return;
+    scheduled = true;
+    let pending = true;
+    let frame;
+    let timer;
+    const flush = () => {
+      if (!pending) return;
+      pending = false;
+      scheduled = false;
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame?.(frame);
+      const roots = fullScan ? new Set([document]) : new Set(
+        Array.from(pendingRoots).filter((root) =>
+          root.isConnected && !isInRoots(root.parentNode, pendingRoots)
+        )
+      );
+      fullScan = false;
+      pendingRoots.clear();
+      hideMembersVideos(roots);
+    };
+    // YouTube can delay animation callbacks even on a visible page.
+    timer = window.setTimeout(flush, 100);
+    frame = window.requestAnimationFrame(flush);
+  }
+
+  function scheduleHideMembers() {
+    fullScan = true;
+    pendingRoots.clear();
+    requestScan();
+  }
+
+  function getScanRoot(element) {
+    let root = null;
+    // Include enclosing shelves and sections when a video badge changes.
+    for (let match = element.closest(SCAN_ROOT_SELECTOR); match;
+      match = match.parentElement?.closest(SCAN_ROOT_SELECTOR)) {
+      root = match;
+    }
+    return root;
+  }
+
+  function queueRoot(root) {
+    if (!fullScan) pendingRoots.add(root);
+    requestScan();
+  }
+
+  const observer = new MutationObserver((records) => {
+    if (fullScan) return;
+    for (const record of records) {
+      const element = record.target.nodeType === 1
+        ? record.target : record.target.parentElement;
+      if (!element?.isConnected) continue;
+      const root = getScanRoot(element);
+      if (root) {
+        queueRoot(root);
+      } else if (record.type === "childList") {
+        for (const node of record.addedNodes) {
+          if (node.nodeType === 1 && node.isConnected &&
+              (node.matches(SCAN_ROOT_SELECTOR) || node.querySelector(SCAN_ROOT_SELECTOR))) {
+            queueRoot(getScanRoot(node) || node);
+          }
+        }
+        if (record.removedNodes.length && hiddenElements.size) requestScan();
+      } else if (record.attributeName === "id" && element.querySelector(SCAN_ROOT_SELECTOR)) {
+        queueRoot(element);
+      }
+    }
+  });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["class", "aria-label", "title", "href", "id", "role", "page-subtype"],
+  });
+
+  window.addEventListener("yt-navigate-finish", scheduleHideMembers);
+  window.addEventListener("yt-page-data-updated", scheduleHideMembers);
+  window.addEventListener("popstate", scheduleHideMembers);
+  window.addEventListener("pageshow", scheduleHideMembers);
 
   console.log("[YouTube Hide Members Videos] Loaded and hiding member videos");
   hideMembersVideos();
