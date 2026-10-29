@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Hide Members Videos
-// @version      1.2.9
+// @version      1.2.10
 // @description  Hide all "Members only" or "Members first" videos from YouTube sections, including filter chips and international languages
 // @author       umbertoragone
 // @match        *://*.youtube.com/*
@@ -314,8 +314,7 @@
   }
 
   function removeWatchPageJoinButton(root) {
-    if (window.location.pathname !== "/watch") return;
-
+    // The watch DOM stays mounted after the URL changes during SPA navigation.
     const joinButtons = findAll(root, WATCH_PAGE_JOIN_BUTTON_SELECTOR);
     for (const button of joinButtons) {
       hideElement(button);
